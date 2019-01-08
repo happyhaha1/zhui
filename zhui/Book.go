@@ -1,10 +1,17 @@
 package zhui
 
 import (
+	"bufio"
 	"encoding/json"
+	"fmt"
+	"github.com/schollz/progressbar"
+	"github.com/tidwall/gjson"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
+	"strconv"
 )
 
 type Book struct {
@@ -56,9 +63,81 @@ func Download(book Book,atoc Atoc, path string) error {
 
 	num := len(chapters)
 
-	println(num)
+	bar := progressbar.New(num)
+	page := 100
+	var start = 0
+	var end = 0
 
+	tempDirPath, e := ioutil.TempDir("", book.Title)
+
+	ch := make(chan int)
+	var files []string
+	for i := 0; end < num; i++ {
+		start = 0 + i*page
+		end = start + page
+		if end > num {
+			end = num
+		}
+		path := tempDirPath + "/" + book.Title + strconv.Itoa(i) + ".txt"
+		files = append(files, path)
+		go saveToFile(chapters[start:end], path, ch)
+	}
+	for range ch {
+		e := bar.Add(1)
+		if e != nil {
+			return e
+		}
+		if bar.State().CurrentPercent == 1 {
+			close(ch)
+		}
+	}
+
+	file, _ := os.Create(path + "/" + book.Title + ".txt")
+	writer := bufio.NewWriter(file)
+	for _,filePath := range files {
+		file, e := os.Open(filePath)
+		if e != nil {
+			return e
+		}
+		reader := bufio.NewReader(file)
+		_, _ = io.Copy(writer, reader)
+	}
+
+	e = os.RemoveAll(tempDirPath)
 	return e
+}
+
+func saveToFile(chapters []Chapter, path string, done chan int)  {
+	file, e := os.Create(path)
+	bufferedWriter := bufio.NewWriter(file)
+	for _,chapter := range chapters {
+		content := content(chapter.Link)
+		content = fmt.Sprintf("%s\n%s\n",chapter.Title,content)
+		_, e := bufferedWriter.WriteString(content)
+		if e != nil {
+			fmt.Printf("error= %s %s",e,chapter.Title)
+		}
+		done <- 1
+	}
+	e = bufferedWriter.Flush()
+	if e != nil {
+		fmt.Printf("error= %s %s",e,chapters)
+	}
+}
+
+func content(link string) string {
+	queryUrl := "http://chapterup.zhuishushenqi.com/chapter/"+url.QueryEscape(link)
+	resp, err := http.Get(queryUrl)
+	bytes, err := ioutil.ReadAll(resp.Body)
+
+	content := gjson.GetBytes(bytes, "chapter.cpContent").Str
+	if len(content) == 0 {
+		content = gjson.GetBytes(bytes, "chapter.body").Str
+	}
+	if err != nil {
+		fmt.Printf("error= %s %s",err,link)
+	}
+	return content
 }
 
 func SearchChapters(atoc Atoc) ([]Chapter, error){
