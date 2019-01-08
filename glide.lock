@@ -1,0 +1,8 @@
+hash: c2c5cc13a1551b033389a43bb65ba7b9c9a9ef93af55a41724c71beafa8ebfb3
+updated: 2019-01-08T14:40:52.450175+08:00
+imports:
+- name: github.com/schollz/progressbar
+  version: dfe83207a3b937a6bd864b993a3350258bd67007
+- name: github.com/tidwall/gjson
+  version: 1e3f6aeaa5bad08d777ea7807b279a07885dd8b2
+testImports: []
