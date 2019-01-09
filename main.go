@@ -28,6 +28,10 @@ func main() {
 	for index,book := range books {
 		fmt.Printf("%d 书籍名称=%s 作者=%s\n",index,book.Title,book.Author)
 	}
+	if len(books) == 0 {
+		fmt.Println("查找不到结果")
+		return
+	}
 	fmt.Println("请输入需要下载的书籍序列号")
 	var index int
 	_, e = fmt.Scanln(&index)
