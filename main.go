@@ -12,11 +12,11 @@ func main() {
 	flag.StringVar(&searchKey,"s","happyhaha","搜索")
 
 	var downloadDir string
-	homedir, e := homedir.Dir()
+	homeDir, e := homedir.Dir()
 	if e != nil {
 		fmt.Printf("error= %s",e)
 	}
-	flag.StringVar(&downloadDir,"d",homedir+"/Downloads","下载路径")
+	flag.StringVar(&downloadDir,"d", homeDir+"/Downloads","下载路径")
 
 	flag.Parse()
 
